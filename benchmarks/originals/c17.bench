@@ -1,0 +1,21 @@
+# c17
+# 5 inputs
+# 2 outputs
+# 0 inverter
+# 6 gates (6 NANDs)
+
+INPUT(G1gat)
+INPUT(G2gat)
+INPUT(G3gat)
+INPUT(G6gat)
+INPUT(G7gat)
+
+OUTPUT(G22gat)
+OUTPUT(G23gat)
+
+G10gat = NAND(G1gat, G3gat)
+G11gat = NAND(G3gat, G6gat)
+G16gat = NAND(G2gat, G11gat)
+G19gat = NAND(G11gat, G7gat)
+G22gat = NAND(G10gat, G16gat)
+G23gat = NAND(G16gat, G19gat)
