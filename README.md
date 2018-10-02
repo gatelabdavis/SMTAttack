@@ -1,2 +1,2 @@
-# SMTAttack
+# SMT Attack
 SMT Attack
