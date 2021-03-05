@@ -8,6 +8,9 @@ import copy
 import operator
 from random import randint
 
+import argparse
+import logging
+
 LOGIC_VALUE_ZERO = "0"
 LOGIC_VALUE_ONE = "1"
 LOGIC_VALUE_X = "X"
@@ -35,16 +38,16 @@ class wire:
         self.index = index
 
 def wire_print(wire_in, print_mode):
-    baseutils.h_print(print_mode, "w_name: ", wire_in.name)
-    baseutils.h_print(print_mode, "w_type: ", wire_in.type)
+    logging.debug("w_name:  {}".format(wire_in.name))
+    logging.debug("w_type:  {}".format(wire_in.type))
     for i in range(0, len(wire_in.operands)):
-        baseutils.h_print(print_mode, "w_opr", i, ": ", wire_in.operands[i].name)
-    baseutils.h_print(print_mode, "w_valu: ", wire_in.logic_value)
-    baseutils.h_print(print_mode, "w_glevmax: ", wire_in.logic_level)
-    baseutils.h_print(print_mode, "w_glevmin: ", wire_in.logic_level_min)
-    baseutils.h_print(print_mode, "catg: ", wire_in.catg)
-    baseutils.h_print(print_mode, "index: ", wire_in.index)
-    baseutils.h_print(print_mode, "-------------------")
+        logging.debug("w_operand({}): {}".format(i, wire_in.operands[i].name))
+    logging.debug("w_value:  {}".format(wire_in.logic_value))
+    logging.debug("w_logic_level_max:  {}".format(wire_in.logic_level))
+    logging.debug("w_logic_level_min:  {}".format(wire_in.logic_level_min))
+    logging.debug("w_category:  {}".format(wire_in.catg))
+    logging.debug("w_index:  {}".format(wire_in.index))
+    logging.debug("-------------------")
 
 def wire_dep(benchmark_address):
     wires = []
@@ -131,7 +134,7 @@ def wire_dep(benchmark_address):
                         wires[i].operands[j] = wires[k]
                         break
                 if not found:
-                    baseutils.h_print(ERR_PR, wires[i].operands[j].name, " --> ERROR1 in read_bench()")
+                    logging.error("ERROR1 in read_bench() at gate {}".format(wires[i].operands[j].name))
                     exit()
 
     for i in range(0, len(wires)):
@@ -235,7 +238,7 @@ def logic_simulation(input_value, wires): #using SAT solver TODO:test performanc
             elif wires[i].operands[0].logic_value == LOGIC_VALUE_ONE:
                 wires[i].logic_value = LOGIC_VALUE_ZERO
             else:
-                baseutils.h_print(ERR_PR, "the value of ", wires[i].name, "is not defined")
+                logging.error("the value of {} is not defined.".format(wires[i].name))
 
         elif wires[i].type == "BUFF" or wires[i].type == "buff" or wires[i].type == "BUF" or wires[i].type == "buf":
             if wires[i].operands[0].logic_value == LOGIC_VALUE_ZERO:
@@ -243,7 +246,7 @@ def logic_simulation(input_value, wires): #using SAT solver TODO:test performanc
             elif wires[i].operands[0].logic_value == LOGIC_VALUE_ONE:
                 wires[i].logic_value = LOGIC_VALUE_ONE
             else:
-                baseutils.h_print(ERR_PR, "the value of ", wires[i].name, "is not defined")
+                logging.error("the value of {} is not defined.".format(wires[i].name))
 
         elif wires[i].type == "NAND" or wires[i].type == "nand":
             temp_value = LOGIC_VALUE_ZERO
@@ -251,7 +254,7 @@ def logic_simulation(input_value, wires): #using SAT solver TODO:test performanc
                 if wires[i].operands[k].logic_value == LOGIC_VALUE_ZERO:
                     temp_value = LOGIC_VALUE_ONE
                 elif wires[i].operands[k].logic_value == LOGIC_VALUE_X:
-                    baseutils.h_print(ERR_PR, "the value of ", wires[i].name, "is not defined")
+                    logging.error("the value of {} is not defined.".format(wires[i].name))
             wires[i].logic_value = temp_value
 
         elif wires[i].type == "AND" or wires[i].type == "and":
@@ -260,7 +263,7 @@ def logic_simulation(input_value, wires): #using SAT solver TODO:test performanc
                 if wires[i].operands[k].logic_value == LOGIC_VALUE_ZERO:
                     temp_value = LOGIC_VALUE_ZERO
                 elif wires[i].operands[k].logic_value == LOGIC_VALUE_X:
-                    baseutils.h_print(ERR_PR, "the value of ", wires[i].name, "is not defined")
+                    logging.error("the value of {} is not defined.".format(wires[i].name))
             wires[i].logic_value = temp_value
 
         elif wires[i].type == "OR" or wires[i].type == "or":
@@ -269,7 +272,7 @@ def logic_simulation(input_value, wires): #using SAT solver TODO:test performanc
                 if wires[i].operands[k].logic_value == LOGIC_VALUE_ONE:
                     temp_value = LOGIC_VALUE_ONE
                 elif wires[i].operands[k].logic_value == LOGIC_VALUE_X:
-                    baseutils.h_print(ERR_PR, "the value of ", wires[i].name, "is not defined")
+                    logging.error("the value of {} is not defined.".format(wires[i].name))
             wires[i].logic_value = temp_value
 
         elif wires[i].type == "NOR" or wires[i].type == "nor":
@@ -278,7 +281,7 @@ def logic_simulation(input_value, wires): #using SAT solver TODO:test performanc
                 if wires[i].operands[k].logic_value == LOGIC_VALUE_ONE:
                     temp_value = LOGIC_VALUE_ZERO
                 elif wires[i].operands[k].logic_value == LOGIC_VALUE_X:
-                    baseutils.h_print(ERR_PR, "the value of ", wires[i].name, "is not defined")
+                    logging.error("the value of {} is not defined.".format(wires[i].name))
             wires[i].logic_value = temp_value
 
         elif wires[i].type == "XOR" or wires[i].type == "xor":
@@ -289,7 +292,7 @@ def logic_simulation(input_value, wires): #using SAT solver TODO:test performanc
                 elif wires[i].operands[k].logic_value == LOGIC_VALUE_ONE and temp_value == LOGIC_VALUE_ONE:
                     temp_value = LOGIC_VALUE_ZERO
                 elif wires[i].operands[k].logic_value == LOGIC_VALUE_X:
-                    baseutils.h_print(ERR_PR, "the value of ", wires[i].name, "is not defined")
+                    logging.error("the value of {} is not defined.".format(wires[i].name))
             wires[i].logic_value = temp_value
 
         elif wires[i].type == "XNOR" or wires[i].type == "xnor":
@@ -300,13 +303,13 @@ def logic_simulation(input_value, wires): #using SAT solver TODO:test performanc
                 elif wires[i].operands[k].logic_value == LOGIC_VALUE_ONE and temp_value == LOGIC_VALUE_ONE:
                     temp_value = LOGIC_VALUE_ZERO
                 elif wires[i].operands[k].logic_value == LOGIC_VALUE_X:
-                    baseutils.h_print(ERR_PR, "the value of ", wires[i].name, "is not defined")
+                    logging.error("the value of {} is not defined.".format(wires[i].name))
             if temp_value == LOGIC_VALUE_ONE:
                 wires[i].logic_value = LOGIC_VALUE_ZERO
             elif temp_value == LOGIC_VALUE_ZERO:
                 wires[i].logic_value = LOGIC_VALUE_ONE
         else:
-            baseutils.h_print(ERR_PR, "the operation ", wires[i].type, " is not valid")
+            logging.error("the value of {} is not defined.".format(wires[i].name))
 
     out_res = ""
 

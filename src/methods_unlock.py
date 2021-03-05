@@ -12,6 +12,9 @@ from random import randint
 import math
 from collections import deque
 
+import argparse
+import logging
+
 import sys
 
 
@@ -20,12 +23,12 @@ WAR_PR = 2
 INF_PR = 1
 DBG_PR = 0
 
-def dll_tck():
 
-    obf_bench_name = sys.argv[2] + "_dll_" + sys.argv[3] + ".bench"
-    obf_bench_address = "../benchmarks/dll_obfuscated/" + obf_bench_name
-    extracted_bench_address = "../benchmarks/logic_extracted/" + obf_bench_name
-    orig_bench_address = "../benchmarks/originals/" + sys.argv[2] + ".bench"
+def eager_dll_attack(args):
+
+    obf_bench_address = args.obfuscated
+    extracted_bench_address = "../benchmarks/logic_extracted/" + args.design_name + "_" + args.tag + ".bench"
+    orig_bench_address = args.original
 
     exe_func_time = 0
     exe_non_func_time = 0
@@ -33,11 +36,11 @@ def dll_tck():
     orgwires, orgpinwires, orgkeywires, orginterwires, orgpoutwires = logicwire.wire_dep(orig_bench_address)
 
     exe_non_func_time = time.time()
-    delay_keys = baseutils.graph_dep(obf_bench_address, orgpoutwires)
+    delay_keys = baseutils.graph_dep(args, obf_bench_address, orgpoutwires)
     exe_non_func_time = time.time() - exe_non_func_time
     # g1.draw()
 
-    converts.extract_logic(obf_bench_address)
+    converts.extract_logic(args)
 
     obfwires, obfpinwires, obfkeywires, obfinterwires, obfpoutwires = logicwire.wire_dep(extracted_bench_address)
 
@@ -49,49 +52,49 @@ def dll_tck():
     list_cpy_dip = []
     res = 1
 
-    baseutils.h_print(DBG_PR, "-------------obfwires------------")
+    logging.debug("-------------obf wires------------")
     for i in range(0, len(obfwires)):
         logicwire.wire_print(obfwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-------------obfpinwires------------")
+    logging.debug("-------------obf pin wires------------")
     for i in range(0, len(obfpinwires)):
         logicwire.wire_print(obfpinwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfkeywires--------------")
+    logging.debug("-----------obf key wires--------------")
     for i in range(0, len(obfkeywires)):
         logicwire.wire_print(obfkeywires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfinterwires--------------")
+    logging.debug("-----------obf inter wires--------------")
     for i in range(0, len(obfinterwires)):
         logicwire.wire_print(obfinterwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfpoutwires--------------")
+    logging.debug("-----------obf pout wires--------------")
     for i in range(0, len(obfpoutwires)):
         logicwire.wire_print(obfpoutwires[i], DBG_PR)
 
-    baseutils.h_print(INF_PR, "#############################################################")
+    logging.info("#############################################################")
 
-    baseutils.h_print(DBG_PR, "-------------orgwires------------")
+    logging.debug("-----------org wires--------------")
     for i in range(0, len(orgwires)):
         logicwire.wire_print(orgwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-------------orgpinwires------------")
+    logging.debug("-------------org pin wires------------")
     for i in range(0, len(orgpinwires)):
         logicwire.wire_print(orgpinwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orgkeywires--------------")
+    logging.debug("-------------org key wires------------")
     for i in range(0, len(orgkeywires)):
         logicwire.wire_print(orgkeywires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orginterwires--------------")
+    logging.debug("-------------org inter wires------------")
     for i in range(0, len(orginterwires)):
         logicwire.wire_print(orginterwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orgpoutwires--------------")
+    logging.debug("-------------org pout wires------------")
     for i in range(0, len(orgpoutwires)):
         logicwire.wire_print(orgpoutwires[i], DBG_PR)
 
-    baseutils.h_print(WAR_PR, "########## looking for DIPs (Iterative SAT Calls)  ##########")
+    logging.warning("########## looking for DIPs (Iterative SAT Calls)  ##########")
 
     iter = 0
     keyin1 = [None] * len(obfkeywires)
@@ -101,13 +104,13 @@ def dll_tck():
     for i in range(0, len(obfkeywires)):
         keyin1[i] = Var()
         keyin1[i].symbol = obfkeywires[i].name + "_1" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin1", i, " ==>", keyin1[i].getSymbol())
+        logging.debug("keyin1 {} ==> {}".format(i, keyin1[i].getSymbol()))
         keyin2[i] = Var()
         keyin2[i].symbol = obfkeywires[i].name + "_2" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin2", i, " ==>", keyin2[i].getSymbol())
+        logging.debug("keyin2 {} ==> {}".format(i, keyin2[i].getSymbol()))
         keyinc[i] = Var()
         keyinc[i].symbol = obfkeywires[i].name + "c"
-        baseutils.h_print(DBG_PR, "keyinc", i, " ==>", keyinc[i].getSymbol())
+        logging.debug("keyinc {} ==> {}".format(i, keyinc[i].getSymbol()))
 
     while res == 1:
         res, dscinp, new_func_time = baseutils.finddip(obfpinwires, obfkeywires, obfinterwires, obfpoutwires, list_dip,
@@ -132,12 +135,12 @@ def dll_tck():
 
             exe_func_time = new_func_time
         else:
-            baseutils.h_print(INF_PR, "=============================================================")
-            baseutils.h_print(INF_PR, "No more DIP ------------------------------- Iterations = ", iter)
-            baseutils.h_print(INF_PR, "=============================================================")
+            logging.info("=============================================================")
+            logging.info("No more DIP ------------------------------- Iterations = {}".format(iter))
+            logging.info("=============================================================")
             Monosat().newSolver()
 
-    baseutils.h_print(DBG_PR, "================ re-initializing DIPs")
+    logging.debug("================ re-initializing DIPs")
     new_list_dips = Var(true())
     for i in range(0, len(list_str_dip)):
         for j in range(0, len(list_str_dip[i])):
@@ -148,39 +151,39 @@ def dll_tck():
                 list_dip[i][j] = Var(false())
                 Solve(Not(list_dip[i][j]))
             new_list_dips = And(new_list_dips, list_dip[i][j])
-    baseutils.h_print(DBG_PR, "================ keyFind SAT call")
+    logging.debug("================ keyFind SAT call")
 
     for i in range(0, len(list_dip)):
         for j in range(0, len(list_dip[i])):
-            baseutils.h_print(DBG_PR, "DIP", i, "[", j, "] = ", str(list_dip[i][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("DIP {} [{}] = {}".format(i, j, list_dip[i][j].value()))
+        logging.debug("")
 
-    baseutils.h_print(WAR_PR, "---------------- looking for key (Last SAT Call) ------------")
+    logging.warning("---------------- looking for key (Last SAT Call) ------------")
     func_keys = baseutils.findkey(obfkeywires, obfinterwires, obfpoutwires, list_dip, list_orgcirc, keyinc)
 
     found_keys = delay_keys + func_keys
 
-    baseutils.h_print(INF_PR, "=============================================================")
-    baseutils.h_print(INF_PR, "================= Non-functional keys ... ===================")
-    baseutils.h_print(INF_PR, "=============================================================")
+    logging.info("=============================================================")
+    logging.info("================= Non-functional keys ... ===================")
+    logging.info("=============================================================")
 
     if delay_keys:
         for i in range(0, len(delay_keys)):
-            baseutils.h_print(INF_PR, delay_keys[i].getSymbol(), " = ", str(delay_keys[i].value()))
+            logging.info("{} = {}".format(delay_keys[i].getSymbol(), str(delay_keys[i].value())))
     else:
-        baseutils.h_print(WAR_PR, "No Non-functional key .............")
+        logging.warning("No Non-functional key .............")
 
-    baseutils.h_print(INF_PR, "=============================================================")
-    baseutils.h_print(INF_PR, "=================== Functional keys ... =====================")
-    baseutils.h_print(INF_PR, "=============================================================")
+    logging.info("=============================================================")
+    logging.info("==================== Functional keys ... ====================")
+    logging.info("=============================================================")
 
     for i in range(0, len(func_keys)):
-        baseutils.h_print(INF_PR, func_keys[i].getSymbol(), " = ", str(func_keys[i].value()))
+        logging.info("{} = {}".format(func_keys[i].getSymbol(), str(func_keys[i].value())))
 
-    if int(sys.argv[3]) == 0:
+    if args.combined_dll == 0:
         len_key = len(found_keys)
     else:
-        len_key = int(sys.argv[3]) * 2
+        len_key = args.combined_dll * 2
     combined_key = [None] * len_key
     for i in range(0, len(found_keys)):
         key_name = found_keys[i].getSymbol()
@@ -195,21 +198,21 @@ def dll_tck():
         else:
             correct_key[i] = "0"
 
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(ERR_PR, "================ Finish 2D (Eager) solver ... ===============")
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(WAR_PR, "=============================================================")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
+    logging.error("================ Finish 2D (Eager) solver ... ===============")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
 
-    baseutils.h_print(ERR_PR, "key= ", ''.join(correct_key))
-    baseutils.h_print(ERR_PR, "func_iteration= ", iter, "; func_exe_time= ", exe_func_time, "; nonfunc_exe_time= ",
-                      exe_non_func_time)
+    logging.error("key= {}".format(''.join(correct_key)))
+    logging.error("func_iteration= {}; func_exe_time= {}; nonfunc_exe_time= {}".format(iter, exe_func_time, exe_non_func_time))
 
 
-def sat_tck():
+def reduced_sat_attack(args):
 
-    obf_bench_name = sys.argv[2]
-    orig_bench_address = sys.argv[3]
+    obf_bench_name = args.obfuscated
+    orig_bench_address = args.original
 
     exe_func_time = 0
     exe_non_func_time = 0
@@ -225,49 +228,49 @@ def sat_tck():
     list_cpy_dip = []
     res = 1
 
-    baseutils.h_print(DBG_PR, "-------------obfwires------------")
+    logging.debug("-------------obf wires------------")
     for i in range(0, len(obfwires)):
         logicwire.wire_print(obfwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-------------obfpinwires------------")
+    logging.debug("-------------obf pin wires------------")
     for i in range(0, len(obfpinwires)):
         logicwire.wire_print(obfpinwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfkeywires--------------")
+    logging.debug("-----------obf key wires--------------")
     for i in range(0, len(obfkeywires)):
         logicwire.wire_print(obfkeywires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfinterwires--------------")
+    logging.debug("-----------obf inter wires--------------")
     for i in range(0, len(obfinterwires)):
         logicwire.wire_print(obfinterwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfpoutwires--------------")
+    logging.debug("-----------obf pout wires--------------")
     for i in range(0, len(obfpoutwires)):
         logicwire.wire_print(obfpoutwires[i], DBG_PR)
 
-    baseutils.h_print(INF_PR, "#############################################################")
+    logging.info("#############################################################")
 
-    baseutils.h_print(DBG_PR, "-------------orgwires------------")
+    logging.debug("-----------org wires--------------")
     for i in range(0, len(orgwires)):
         logicwire.wire_print(orgwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-------------orgpinwires------------")
+    logging.debug("-------------org pin wires------------")
     for i in range(0, len(orgpinwires)):
         logicwire.wire_print(orgpinwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orgkeywires--------------")
+    logging.debug("-------------org key wires------------")
     for i in range(0, len(orgkeywires)):
         logicwire.wire_print(orgkeywires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orginterwires--------------")
+    logging.debug("-------------org inter wires------------")
     for i in range(0, len(orginterwires)):
         logicwire.wire_print(orginterwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orgpoutwires--------------")
+    logging.debug("-------------org pout wires------------")
     for i in range(0, len(orgpoutwires)):
         logicwire.wire_print(orgpoutwires[i], DBG_PR)
 
-    baseutils.h_print(WAR_PR, "########## looking for DIPs (Iterative SAT Calls)  ##########")
+    logging.warning("########## looking for DIPs (Iterative SAT Calls)  ##########")
 
     iter = 0
     keyin1 = [None] * len(obfkeywires)
@@ -277,13 +280,13 @@ def sat_tck():
     for i in range(0, len(obfkeywires)):
         keyin1[i] = Var()
         keyin1[i].symbol = obfkeywires[i].name + "_1" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin1", i, " ==>", keyin1[i].getSymbol())
+        logging.debug("keyin1 {} ==> {}".format(i, keyin1[i].getSymbol()))
         keyin2[i] = Var()
         keyin2[i].symbol = obfkeywires[i].name + "_2" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin2", i, " ==>", keyin2[i].getSymbol())
+        logging.debug("keyin2 {} ==> {}".format(i, keyin2[i].getSymbol()))
         keyinc[i] = Var()
         keyinc[i].symbol = obfkeywires[i].name + "c"
-        baseutils.h_print(DBG_PR, "keyinc", i, " ==>", keyinc[i].getSymbol())
+        logging.debug("keyinc {} ==> {}".format(i, keyinc[i].getSymbol()))
 
     while res == 1:
         res, dscinp, new_func_time = baseutils.finddip(obfpinwires, obfkeywires, obfinterwires, obfpoutwires, list_dip,
@@ -309,12 +312,12 @@ def sat_tck():
 
             exe_func_time = new_func_time
         else:
-            baseutils.h_print(INF_PR, "=============================================================")
-            baseutils.h_print(INF_PR, "No more DIP ------------------------------- Iterations = ", iter)
-            baseutils.h_print(INF_PR, "=============================================================")
+            logging.info("=============================================================")
+            logging.info("No more DIP ------------------------------- Iterations = {}".format(iter))
+            logging.info("=============================================================")
             Monosat().newSolver()
 
-    baseutils.h_print(DBG_PR, "================ re-initializing DIPs")
+    logging.debug("================ re-initializing DIPs")
     new_list_dips = Var(true())
     for i in range(0, len(list_str_dip)):
         for j in range(0, len(list_str_dip[i])):
@@ -325,24 +328,24 @@ def sat_tck():
                 list_dip[i][j] = Var(false())
                 Solve(Not(list_dip[i][j]))
             new_list_dips = And(new_list_dips, list_dip[i][j])
-    baseutils.h_print(DBG_PR, "================ keyFind SAT call")
+    logging.debug("================ keyFind SAT call")
 
     for i in range(0, len(list_dip)):
         for j in range(0, len(list_dip[i])):
-            baseutils.h_print(DBG_PR, "DIP", i, "[", j, "] = ", str(list_dip[i][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("DIP {} [{}] = {}".format(i, j, list_dip[i][j].value()))
+        logging.debug("")
 
-    baseutils.h_print(WAR_PR, "---------------- looking for key (Last SAT Call) ------------")
+    logging.warning("---------------- looking for key (Last SAT Call) ------------")
     func_keys = baseutils.findkey(obfkeywires, obfinterwires, obfpoutwires, list_dip, list_orgcirc, keyinc)
 
     found_keys = func_keys
 
-    baseutils.h_print(INF_PR, "=============================================================")
-    baseutils.h_print(INF_PR, "========================= keys ... ==========================")
-    baseutils.h_print(INF_PR, "=============================================================")
+    logging.info("=============================================================")
+    logging.info("========================== keys ... =========================")
+    logging.info("=============================================================")
 
     for i in range(0, len(func_keys)):
-        baseutils.h_print(INF_PR, func_keys[i].getSymbol(), " = ", str(func_keys[i].value()))
+        logging.info("{} = {}".format(func_keys[i].getSymbol(), str(func_keys[i].value())))
 
     combined_key = [None] * len(found_keys)
     for i in range(0, len(found_keys)):
@@ -358,27 +361,26 @@ def sat_tck():
         else:
             correct_key[i] = "0"
 
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(ERR_PR, "=================== Finish SAT solver ... ===================")
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(WAR_PR, "=============================================================")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
+    logging.error("==================  Finish SAT solver ...  ==================")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
 
-    baseutils.h_print(ERR_PR, "key= ", ''.join(correct_key))
-    baseutils.h_print(ERR_PR, "func_iteration= ", iter, "; func_exe_time= ", exe_func_time, "; nonfunc_exe_time= ",
-                      exe_non_func_time)
+    logging.error("key= {}".format(''.join(correct_key)))
+    logging.error("func_iteration= {}; func_exe_time= {}; nonfunc_exe_time= {}".format(iter, exe_func_time, exe_non_func_time))
 
 
-def ddip_tck():
+def smt_approximate_attack(args):
 
-    obf_bench_name = sys.argv[2]
-    orig_bench_address = sys.argv[3]
+    obf_bench_address = args.obfuscated
+    orig_bench_address = args.original
 
     exe_func_time = 0
     exe_non_func_time = 0
 
     orgwires, orgpinwires, orgkeywires, orginterwires, orgpoutwires = logicwire.wire_dep(orig_bench_address)
-    obfwires, obfpinwires, obfkeywires, obfinterwires, obfpoutwires = logicwire.wire_dep(obf_bench_name)
+    obfwires, obfpinwires, obfkeywires, obfinterwires, obfpoutwires = logicwire.wire_dep(obf_bench_address)
 
     list_dip = []
     orgcirc = [None] * len(orgpoutwires)
@@ -388,49 +390,49 @@ def ddip_tck():
     list_cpy_dip = []
     res = 1
 
-    baseutils.h_print(DBG_PR, "-------------obfwires------------")
+    logging.debug("-------------obf wires------------")
     for i in range(0, len(obfwires)):
         logicwire.wire_print(obfwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-------------obfpinwires------------")
+    logging.debug("-------------obf pin wires------------")
     for i in range(0, len(obfpinwires)):
         logicwire.wire_print(obfpinwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfkeywires--------------")
+    logging.debug("-----------obf key wires--------------")
     for i in range(0, len(obfkeywires)):
         logicwire.wire_print(obfkeywires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfinterwires--------------")
+    logging.debug("-----------obf inter wires--------------")
     for i in range(0, len(obfinterwires)):
         logicwire.wire_print(obfinterwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfpoutwires--------------")
+    logging.debug("-----------obf pout wires--------------")
     for i in range(0, len(obfpoutwires)):
         logicwire.wire_print(obfpoutwires[i], DBG_PR)
 
-    baseutils.h_print(INF_PR, "#############################################################")
+    logging.info("#############################################################")
 
-    baseutils.h_print(DBG_PR, "-------------orgwires------------")
+    logging.debug("-----------org wires--------------")
     for i in range(0, len(orgwires)):
         logicwire.wire_print(orgwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-------------orgpinwires------------")
+    logging.debug("-------------org pin wires------------")
     for i in range(0, len(orgpinwires)):
         logicwire.wire_print(orgpinwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orgkeywires--------------")
+    logging.debug("-------------org key wires------------")
     for i in range(0, len(orgkeywires)):
         logicwire.wire_print(orgkeywires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orginterwires--------------")
+    logging.debug("-------------org inter wires------------")
     for i in range(0, len(orginterwires)):
         logicwire.wire_print(orginterwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orgpoutwires--------------")
+    logging.debug("-------------org pout wires------------")
     for i in range(0, len(orgpoutwires)):
         logicwire.wire_print(orgpoutwires[i], DBG_PR)
 
-    baseutils.h_print(WAR_PR, "########## looking for Double DIPs (Iterative SAT Calls)  ##########")
+    logging.warning("########## looking for DIPs (Iterative SAT Calls)  ##########")
 
     iter = 0
     keyin1 = [None] * len(obfkeywires)
@@ -442,23 +444,23 @@ def ddip_tck():
     for i in range(0, len(obfkeywires)):
         keyin1[i] = Var()
         keyin1[i].symbol = obfkeywires[i].name + "_1" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin1", i, " ==>", keyin1[i].getSymbol())
+        logging.debug("keyin1 {} ==> {}".format(i, keyin1[i].getSymbol()))
 
         keyin2[i] = Var()
         keyin2[i].symbol = obfkeywires[i].name + "_2" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin2", i, " ==>", keyin2[i].getSymbol())
+        logging.debug("keyin2 {} ==> {}".format(i, keyin2[i].getSymbol()))
 
         keyin3[i] = Var()
         keyin3[i].symbol = obfkeywires[i].name + "_3" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin2", i, " ==>", keyin3[i].getSymbol())
+        logging.debug("keyinc {} ==> {}".format(i, keyin3[i].getSymbol()))
 
         keyin4[i] = Var()
         keyin4[i].symbol = obfkeywires[i].name + "_4" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin2", i, " ==>", keyin4[i].getSymbol())
+        logging.debug("keyinc {} ==> {}".format(i, keyin4[i].getSymbol()))
 
         keyinc[i] = Var()
         keyinc[i].symbol = obfkeywires[i].name + "c"
-        baseutils.h_print(DBG_PR, "keyinc", i, " ==>", keyinc[i].getSymbol())
+        logging.debug("keyinc {} ==> {}".format(i, keyinc[i].getSymbol()))
 
     while res == 1:
         res, dscinp, new_func_time = baseutils.double_dip(obfpinwires, obfkeywires, obfinterwires, obfpoutwires, list_dip,
@@ -484,12 +486,12 @@ def ddip_tck():
 
             exe_func_time = new_func_time
         else:
-            baseutils.h_print(INF_PR, "=============================================================")
-            baseutils.h_print(INF_PR, "No more DIP ------------------------------- Iterations = ", iter)
-            baseutils.h_print(INF_PR, "=============================================================")
+            logging.info("=============================================================")
+            logging.info("No more DIP ------------------------------- Iterations = {}".format(iter))
+            logging.info("=============================================================")
             Monosat().newSolver()
 
-    baseutils.h_print(DBG_PR, "================ re-initializing DIPs")
+    logging.debug("================ re-initializing DIPs")
     new_list_dips = Var(true())
     for i in range(0, len(list_str_dip)):
         for j in range(0, len(list_str_dip[i])):
@@ -500,24 +502,24 @@ def ddip_tck():
                 list_dip[i][j] = Var(false())
                 Solve(Not(list_dip[i][j]))
             new_list_dips = And(new_list_dips, list_dip[i][j])
-    baseutils.h_print(DBG_PR, "================ keyFind SAT call")
+    logging.debug("================ keyFind SAT call")
 
     for i in range(0, len(list_dip)):
         for j in range(0, len(list_dip[i])):
-            baseutils.h_print(DBG_PR, "DIP", i, "[", j, "] = ", str(list_dip[i][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("DIP {} [{}] = {}".format(i, j, list_dip[i][j].value()))
+        logging.debug("")
 
-    baseutils.h_print(WAR_PR, "---------------- looking for key (Last SAT Call) ------------")
+    logging.warning("---------------- looking for key (Last SAT Call) ------------")
     func_keys = baseutils.findkey(obfkeywires, obfinterwires, obfpoutwires, list_dip, list_orgcirc, keyinc)
 
     found_keys = func_keys
 
-    baseutils.h_print(INF_PR, "=============================================================")
-    baseutils.h_print(INF_PR, "========================= keys ... ==========================")
-    baseutils.h_print(INF_PR, "=============================================================")
+    logging.info("=============================================================")
+    logging.info("========================== keys ... =========================")
+    logging.info("=============================================================")
 
     for i in range(0, len(func_keys)):
-        baseutils.h_print(INF_PR, func_keys[i].getSymbol(), " = ", str(func_keys[i].value()))
+        logging.info("{} = {}".format(func_keys[i].getSymbol(), str(func_keys[i].value())))
 
     combined_key = [None] * len(found_keys)
     for i in range(0, len(found_keys)):
@@ -533,30 +535,29 @@ def ddip_tck():
         else:
             correct_key[i] = "0"
 
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(ERR_PR, "=================== Finish DDIP solver ... ==================")
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(WAR_PR, "=============================================================")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
+    logging.error("============== Finish Approximate SMT solver ... ==============")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
 
-    baseutils.h_print(ERR_PR, "key= ", ''.join(correct_key))
-    baseutils.h_print(ERR_PR, "func_iteration= ", iter, "; func_exe_time= ", exe_func_time, "; nonfunc_exe_time= ",
-                      exe_non_func_time)
+    logging.error("key= {}".format(''.join(correct_key)))
+    logging.error("func_iteration= {}; func_exe_time= {}; nonfunc_exe_time= {}".format(iter, exe_func_time, exe_non_func_time))
 
 
-def lazy_smt():
+def lazy_dll_attack(args):
 
-    obf_bench_name = sys.argv[2] + "_dll_" + sys.argv[3] + ".bench"
-    obf_bench_address = "../benchmarks/dll_obfuscated/" + obf_bench_name
-    dll_muxed = "../benchmarks/dll_muxed/" + obf_bench_name
-    orig_bench_address = "../benchmarks/originals/" + sys.argv[2] + ".bench"
+    obf_bench_address = args.obfuscated
+    dll_muxed = "../benchmarks/dll_muxed/" + args.design_name + "_" + args.tag + ".bench"
+    orig_bench_address = args.original
 
     exe_func_time = 0
     exe_non_func_time = 0
 
     orgwires, orgpinwires, orgkeywires, orginterwires, orgpoutwires = logicwire.wire_dep(orig_bench_address)
 
-    converts.delaybench2muxbench(obf_bench_address)
+    converts.delaybench2muxbench(args, obf_bench_address)
 
     obfwires, obfpinwires, obfkeywires, obfinterwires, obfpoutwires = logicwire.wire_dep(dll_muxed)
 
@@ -568,49 +569,49 @@ def lazy_smt():
     list_cpy_dip = []
     res = 1
 
-    baseutils.h_print(DBG_PR, "-------------obfwires------------")
+    logging.debug("-------------obf wires------------")
     for i in range(0, len(obfwires)):
         logicwire.wire_print(obfwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-------------obfpinwires------------")
+    logging.debug("-------------obf pin wires------------")
     for i in range(0, len(obfpinwires)):
         logicwire.wire_print(obfpinwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfkeywires--------------")
+    logging.debug("-----------obf key wires--------------")
     for i in range(0, len(obfkeywires)):
         logicwire.wire_print(obfkeywires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfinterwires--------------")
+    logging.debug("-----------obf inter wires--------------")
     for i in range(0, len(obfinterwires)):
         logicwire.wire_print(obfinterwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfpoutwires--------------")
+    logging.debug("-----------obf pout wires--------------")
     for i in range(0, len(obfpoutwires)):
         logicwire.wire_print(obfpoutwires[i], DBG_PR)
 
-    baseutils.h_print(INF_PR, "#############################################################")
+    logging.info("#############################################################")
 
-    baseutils.h_print(DBG_PR, "-------------orgwires------------")
+    logging.debug("-----------org wires--------------")
     for i in range(0, len(orgwires)):
         logicwire.wire_print(orgwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-------------orgpinwires------------")
+    logging.debug("-------------org pin wires------------")
     for i in range(0, len(orgpinwires)):
         logicwire.wire_print(orgpinwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orgkeywires--------------")
+    logging.debug("-------------org key wires------------")
     for i in range(0, len(orgkeywires)):
         logicwire.wire_print(orgkeywires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orginterwires--------------")
+    logging.debug("-------------org inter wires------------")
     for i in range(0, len(orginterwires)):
         logicwire.wire_print(orginterwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orgpoutwires--------------")
+    logging.debug("-------------org pout wires------------")
     for i in range(0, len(orgpoutwires)):
         logicwire.wire_print(orgpoutwires[i], DBG_PR)
 
-    baseutils.h_print(WAR_PR, "########## looking for DIPs (Iterative SAT Calls)  ##########")
+    logging.warning("########## looking for DIPs (Iterative SAT Calls)  ##########")
 
     iter = 0
     keyin1 = [None] * len(obfkeywires)
@@ -623,19 +624,19 @@ def lazy_smt():
     for i in range(0, len(obfkeywires)):
         keyin1[i] = Var()
         keyin1[i].symbol = obfkeywires[i].name + "_1" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin1", i, " ==>", keyin1[i].getSymbol())
+        logging.debug("keyin1 {} ==> {}".format(i, keyin1[i].getSymbol()))
         keyin2[i] = Var()
         keyin2[i].symbol = obfkeywires[i].name + "_2" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin2", i, " ==>", keyin2[i].getSymbol())
+        logging.debug("keyin2 {} ==> {}".format(i, keyin2[i].getSymbol()))
         keyinc[i] = Var()
         keyinc[i].symbol = obfkeywires[i].name + "c"
-        baseutils.h_print(DBG_PR, "keyinc", i, " ==>", keyinc[i].getSymbol())
+        logging.debug("keyinc {} ==> {}".format(i, keyinc[i].getSymbol()))
 
     # res, dscinp, new_func_time = baseutils.finddiplazy(obf_bench_address, obfpinwires, obfkeywires, obfinterwires, obfpoutwires, list_dip,
     #                                                list_orgcirc, keyin1, keyin2, exe_func_time)  # duplicate and find dip
     #
     while res == 1:
-        res, dscinp, new_func_time, gc_list1, gc_list2 = baseutils.finddiplazy(obf_bench_address, obfpinwires, obfkeywires, obfinterwires, obfpoutwires, list_dip,
+        res, dscinp, new_func_time, gc_list1, gc_list2 = baseutils.finddiplazy(args, obf_bench_address, obfpinwires, obfkeywires, obfinterwires, obfpoutwires, list_dip,
                                                        list_orgcirc, keyin1, keyin2,
                                                        exe_func_time, gc_list1, gc_list2)  # duplicate and find dip
 
@@ -658,11 +659,11 @@ def lazy_smt():
 
             exe_func_time = new_func_time
         else:
-            baseutils.h_print(INF_PR, "=============================================================")
-            baseutils.h_print(INF_PR, "No more DIP ------------------------------- Iterations = ", iter)
-            baseutils.h_print(INF_PR, "=============================================================")
+            logging.info("=============================================================")
+            logging.info("No more DIP ------------------------------- Iterations = {}".format(iter))
+            logging.info("=============================================================")
             Monosat().newSolver()
-    baseutils.h_print(DBG_PR, "================ re-initializing DIPs")
+    logging.debug("================ re-initializing DIPs")
     new_list_dips = Var(true())
     for i in range(0, len(list_str_dip)):
         for j in range(0, len(list_str_dip[i])):
@@ -673,24 +674,24 @@ def lazy_smt():
                 list_dip[i][j] = Var(false())
                 Solve(Not(list_dip[i][j]))
             new_list_dips = And(new_list_dips, list_dip[i][j])
-    baseutils.h_print(DBG_PR, "================ keyFind SAT call")
+    logging.debug("================ keyFind SAT call")
 
     for i in range(0, len(list_dip)):
         for j in range(0, len(list_dip[i])):
-            baseutils.h_print(DBG_PR, "DIP", i, "[", j, "] = ", str(list_dip[i][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("DIP {} [{}] = {}".format(i, j, list_dip[i][j].value()))
+        logging.debug("")
 
-    baseutils.h_print(WAR_PR, "---------------- looking for key (Last SAT Call) ------------")
+    logging.warning("---------------- looking for key (Last SAT Call) ------------")
     func_keys = baseutils.findkey(obfkeywires, obfinterwires, obfpoutwires, list_dip, list_orgcirc, keyinc)
 
     found_keys = func_keys
 
-    baseutils.h_print(INF_PR, "=============================================================")
-    baseutils.h_print(INF_PR, "========================= keys ... ==========================")
-    baseutils.h_print(INF_PR, "=============================================================")
+    logging.info("=============================================================")
+    logging.info("========================== keys ... =========================")
+    logging.info("=============================================================")
 
     for i in range(0, len(func_keys)):
-        baseutils.h_print(INF_PR, func_keys[i].getSymbol(), " = ", str(func_keys[i].value()))
+        logging.info("{} = {}".format(func_keys[i].getSymbol(), str(func_keys[i].value())))
 
     combined_key = [None] * len(found_keys)
     for i in range(0, len(found_keys)):
@@ -706,27 +707,27 @@ def lazy_smt():
         else:
             correct_key[i] = "0"
 
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(ERR_PR, "================= Finish 2D (Lazy) solver ... ===============")
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(WAR_PR, "=============================================================")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
+    logging.error("=================== Finish 2D (Lazy) solver ... ===============")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
 
-    baseutils.h_print(ERR_PR, "key= ", ''.join(correct_key))
-    baseutils.h_print(ERR_PR, "func_iteration= ", iter, "; func_exe_time= ", exe_func_time, "; nonfunc_exe_time= ",
-                      exe_non_func_time)
+    logging.error("key= {}".format(''.join(correct_key)))
+    logging.error("func_iteration= {}; func_exe_time= {}; nonfunc_exe_time= {}".format(iter, exe_func_time, exe_non_func_time))
 
 
-def appsat_minham_tck():
+def smt_hamming_sweep_attack(args):
 
-    obf_bench_name = sys.argv[2]
-    orig_bench_address = sys.argv[3]
+    obf_bench_address = args.obfuscated
+    orig_bench_address = args.original
 
     exe_func_time = 0
     exe_non_func_time = 0
 
     orgwires, orgpinwires, orgkeywires, orginterwires, orgpoutwires = logicwire.wire_dep(orig_bench_address)
-    obfwires, obfpinwires, obfkeywires, obfinterwires, obfpoutwires = logicwire.wire_dep(obf_bench_name)
+    obfwires, obfpinwires, obfkeywires, obfinterwires, obfpoutwires = logicwire.wire_dep(obf_bench_address)
 
     list_dip = []
     orgcirc = [None] * len(orgpoutwires)
@@ -739,49 +740,49 @@ def appsat_minham_tck():
     timeout_array = deque([20] * 10)
     const_solve = []
 
-    baseutils.h_print(DBG_PR, "-------------obfwires------------")
+    logging.debug("-------------obf wires------------")
     for i in range(0, len(obfwires)):
         logicwire.wire_print(obfwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-------------obfpinwires------------")
+    logging.debug("-------------obf pin wires------------")
     for i in range(0, len(obfpinwires)):
         logicwire.wire_print(obfpinwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfkeywires--------------")
+    logging.debug("-----------obf key wires--------------")
     for i in range(0, len(obfkeywires)):
         logicwire.wire_print(obfkeywires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfinterwires--------------")
+    logging.debug("-----------obf inter wires--------------")
     for i in range(0, len(obfinterwires)):
         logicwire.wire_print(obfinterwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------obfpoutwires--------------")
+    logging.debug("-----------obf pout wires--------------")
     for i in range(0, len(obfpoutwires)):
         logicwire.wire_print(obfpoutwires[i], DBG_PR)
 
-    baseutils.h_print(INF_PR, "#############################################################")
+    logging.info("#############################################################")
 
-    baseutils.h_print(DBG_PR, "-------------orgwires------------")
+    logging.debug("-----------org wires--------------")
     for i in range(0, len(orgwires)):
         logicwire.wire_print(orgwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-------------orgpinwires------------")
+    logging.debug("-------------org pin wires------------")
     for i in range(0, len(orgpinwires)):
         logicwire.wire_print(orgpinwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orgkeywires--------------")
+    logging.debug("-------------org key wires------------")
     for i in range(0, len(orgkeywires)):
         logicwire.wire_print(orgkeywires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orginterwires--------------")
+    logging.debug("-------------org inter wires------------")
     for i in range(0, len(orginterwires)):
         logicwire.wire_print(orginterwires[i], DBG_PR)
 
-    baseutils.h_print(DBG_PR, "-----------orgpoutwires--------------")
+    logging.debug("-------------org pout wires------------")
     for i in range(0, len(orgpoutwires)):
         logicwire.wire_print(orgpoutwires[i], DBG_PR)
 
-    baseutils.h_print(WAR_PR, "########## looking for DIPs (Iterative SAT Calls)  ##########")
+    logging.warning("########## looking for DIPs (Iterative SAT Calls)  ##########")
 
     iter = 0
     keyin1 = [None] * len(obfkeywires)
@@ -789,17 +790,17 @@ def appsat_minham_tck():
     keyinc = [None] * len(obfkeywires)
 
     interval = len(orgpoutwires)
-    appsat = 0
+    approx = 0
     for i in range(0, len(obfkeywires)):
         keyin1[i] = Var()
         keyin1[i].symbol = obfkeywires[i].name + "_1" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin1", i, " ==>", keyin1[i].getSymbol())
+        logging.debug("keyin1 {} ==> {}".format(i, keyin1[i].getSymbol()))
         keyin2[i] = Var()
         keyin2[i].symbol = obfkeywires[i].name + "_2" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin2", i, " ==>", keyin2[i].getSymbol())
+        logging.debug("keyin2 {} ==> {}".format(i, keyin2[i].getSymbol()))
         keyinc[i] = Var()
         keyinc[i].symbol = obfkeywires[i].name + "c"
-        baseutils.h_print(DBG_PR, "keyinc", i, " ==>", keyinc[i].getSymbol())
+        logging.debug("keyinc {} ==> {}".format(i, keyinc[i].getSymbol()))
 
     while res != -1 and interval != 0:
         res, dscinp, new_func_time, interval, timeout_array, const_solve = baseutils.finddipham(obfpinwires, obfkeywires, obfinterwires, obfpoutwires, list_dip,
@@ -809,7 +810,7 @@ def appsat_minham_tck():
         if len(const_solve) > 50:
             interval = 0
             res = -1
-            appsat = 1
+            approx = 1
 
         print("res > ", res)
         if res == 1:
@@ -838,12 +839,12 @@ def appsat_minham_tck():
             interval -= 1
             res = 1
         else:
-            baseutils.h_print(INF_PR, "=============================================================")
-            baseutils.h_print(INF_PR, "No more DIP ------------------------------- Iterations = ", iter)
-            baseutils.h_print(INF_PR, "=============================================================")
+            logging.info("=============================================================")
+            logging.info("No more DIP ------------------------------- Iterations = {}".format(iter))
+            logging.info("=============================================================")
             Monosat().newSolver()
 
-    baseutils.h_print(DBG_PR, "================ re-initializing DIPs")
+    logging.debug("================ re-initializing DIPs")
     new_list_dips = Var(true())
     for i in range(0, len(list_str_dip)):
         for j in range(0, len(list_str_dip[i])):
@@ -854,24 +855,24 @@ def appsat_minham_tck():
                 list_dip[i][j] = Var(false())
                 Solve(Not(list_dip[i][j]))
             new_list_dips = And(new_list_dips, list_dip[i][j])
-    baseutils.h_print(DBG_PR, "================ keyFind SAT call")
+    logging.debug("================ keyFind SAT call")
 
     for i in range(0, len(list_dip)):
         for j in range(0, len(list_dip[i])):
-            baseutils.h_print(DBG_PR, "DIP", i, "[", j, "] = ", str(list_dip[i][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("DIP {} [{}] = {}".format(i, j, list_dip[i][j].value()))
+        logging.debug("")
 
-    baseutils.h_print(WAR_PR, "---------------- looking for key (Last SAT Call) ------------")
+    logging.warning("---------------- looking for key (Last SAT Call) ------------")
     func_keys = baseutils.findkey(obfkeywires, obfinterwires, obfpoutwires, list_dip, list_orgcirc, keyinc)
 
     found_keys = func_keys
 
-    baseutils.h_print(INF_PR, "=============================================================")
-    baseutils.h_print(INF_PR, "========================= keys ... ==========================")
-    baseutils.h_print(INF_PR, "=============================================================")
+    logging.info("=============================================================")
+    logging.info("============================= keys ... ======================")
+    logging.info("=============================================================")
 
     for i in range(0, len(func_keys)):
-        baseutils.h_print(INF_PR, func_keys[i].getSymbol(), " = ", str(func_keys[i].value()))
+        logging.info("{} = {}".format(func_keys[i].getSymbol(), str(func_keys[i].value())))
 
     combined_key = [None] * len(found_keys)
     for i in range(0, len(found_keys)):
@@ -887,23 +888,23 @@ def appsat_minham_tck():
         else:
             correct_key[i] = "0"
 
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(WAR_PR, "=============================================================")
-    if appsat == 1:
-        baseutils.h_print(ERR_PR, "============= Finish Approximate SAT solver ... =============")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
+    if approx == 1:
+        logging.error("============= Finish Approximate SMT solver ... =============")
     else:
-        baseutils.h_print(ERR_PR, "================= Finish Max Hamm solver ... ================")
-    baseutils.h_print(WAR_PR, "=============================================================")
-    baseutils.h_print(WAR_PR, "=============================================================")
+        logging.error("============== Finish Max Hamming solver ... ================")
+    logging.warning("=============================================================")
+    logging.warning("=============================================================")
 
-    baseutils.h_print(ERR_PR, "key= ", ''.join(correct_key))
-    baseutils.h_print(ERR_PR, "func_iteration= ", iter, "; func_exe_time= ", exe_func_time, "; nonfunc_exe_time= ",
-                      exe_non_func_time)
+    logging.error("key= {}".format(''.join(correct_key)))
+    logging.error("func_iteration= {}; func_exe_time= {}; nonfunc_exe_time= {}".format(iter, exe_func_time, exe_non_func_time))
 
-def sat_cks(dip_no):
 
-    obf_bench_name = sys.argv[3]
-    orig_bench_address = sys.argv[4]
+def limited_sat(args):
+
+    obf_bench_name = args.obfuscated
+    orig_bench_address = args.original
 
     exe_func_time = 0
     exe_non_func_time = 0
@@ -927,15 +928,15 @@ def sat_cks(dip_no):
     for i in range(0, len(obfkeywires)):
         keyin1[i] = Var()
         keyin1[i].symbol = obfkeywires[i].name + "_1" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin1", i, " ==>", keyin1[i].getSymbol())
+        logging.debug("keyin1 {} ==> {}".format(i, keyin1[i].getSymbol()))
         keyin2[i] = Var()
         keyin2[i].symbol = obfkeywires[i].name + "_2" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin2", i, " ==>", keyin2[i].getSymbol())
+        logging.debug("keyin2 {} ==> {}".format(i, keyin2[i].getSymbol()))
         keyinc[i] = Var()
         keyinc[i].symbol = obfkeywires[i].name + "c"
-        baseutils.h_print(DBG_PR, "keyinc", i, " ==>", keyinc[i].getSymbol())
+        logging.debug("keyinc {} ==> {}".format(i, keyinc[i].getSymbol()))
 
-    while iter < dip_no:
+    while iter < args.iteration:
         res, dscinp, new_func_time = baseutils.finddip(obfpinwires, obfkeywires, obfinterwires, obfpoutwires, list_dip,
                                                        list_orgcirc, keyin1, keyin2,
                                                        exe_func_time)  # duplicate and find dip
@@ -959,12 +960,12 @@ def sat_cks(dip_no):
 
             exe_func_time = new_func_time
         else:
-            baseutils.h_print(INF_PR, "=============================================================")
-            baseutils.h_print(INF_PR, "No more DIP ------------------------------- Iterations = ", iter)
-            baseutils.h_print(INF_PR, "=============================================================")
+            logging.info("=============================================================")
+            logging.info("No more DIP ------------------------------- Iterations = {}".format(iter))
+            logging.info("=============================================================")
             Monosat().newSolver()
 
-    baseutils.h_print(DBG_PR, "================ re-initializing DIPs")
+    logging.debug("================ re-initializing DIPs")
     new_list_dips = Var(true())
     for i in range(0, len(list_str_dip)):
         for j in range(0, len(list_str_dip[i])):
@@ -975,14 +976,14 @@ def sat_cks(dip_no):
                 list_dip[i][j] = Var(false())
                 Solve(Not(list_dip[i][j]))
             new_list_dips = And(new_list_dips, list_dip[i][j])
-    baseutils.h_print(DBG_PR, "================ keyFind SAT call")
+    logging.debug("================ keyFind SAT call")
 
     for i in range(0, len(list_dip)):
         for j in range(0, len(list_dip[i])):
-            baseutils.h_print(DBG_PR, "DIP", i, "[", j, "] = ", str(list_dip[i][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("DIP {} [{}] = {}".format(i, j, list_dip[i][j].value()))
+        logging.debug("")
 
-    baseutils.h_print(WAR_PR, "---------------- looking for key (Last SAT Call) ------------")
+    logging.warning("---------------- looking for key (Last SAT Call) ------------")
 
     list_keys = []
     func_keys_value = 0
@@ -1010,10 +1011,10 @@ def sat_cks(dip_no):
         func_keys = baseutils.findkey_list(obfkeywires, obfinterwires, obfpoutwires, list_dip, list_orgcirc, keyinc,
                                       list_keys)
 
-def ham_cks(dip_no):
+def limited_hamming(args):
 
-    obf_bench_name = sys.argv[3]
-    orig_bench_address = sys.argv[4]
+    obf_bench_name = args.obfuscated
+    orig_bench_address = args.original
 
     exe_func_time = 0
     exe_non_func_time = 0
@@ -1042,15 +1043,15 @@ def ham_cks(dip_no):
     for i in range(0, len(obfkeywires)):
         keyin1[i] = Var()
         keyin1[i].symbol = obfkeywires[i].name + "_1" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin1", i, " ==>", keyin1[i].getSymbol())
+        logging.debug("keyin1 {} ==> {}".format(i, keyin1[i].getSymbol()))
         keyin2[i] = Var()
         keyin2[i].symbol = obfkeywires[i].name + "_2" + str(iter)
-        baseutils.h_print(DBG_PR, "keyin2", i, " ==>", keyin2[i].getSymbol())
+        logging.debug("keyin2 {} ==> {}".format(i, keyin2[i].getSymbol()))
         keyinc[i] = Var()
         keyinc[i].symbol = obfkeywires[i].name + "c"
-        baseutils.h_print(DBG_PR, "keyinc", i, " ==>", keyinc[i].getSymbol())
+        logging.debug("keyinc {} ==> {}".format(i, keyinc[i].getSymbol()))
 
-    while iter < dip_no and interval != 0:
+    while iter < args.iteration and interval != 0:
         res, dscinp, new_func_time, interval, timeout_array, const_solve = baseutils.finddipham(obfpinwires,
                                                                                                 obfkeywires,
                                                                                                 obfinterwires,
@@ -1088,12 +1089,12 @@ def ham_cks(dip_no):
             interval -= 1
             res = 1
         else:
-            baseutils.h_print(INF_PR, "=============================================================")
-            baseutils.h_print(INF_PR, "No more DIP ------------------------------- Iterations = ", iter)
-            baseutils.h_print(INF_PR, "=============================================================")
+            logging.info("=============================================================")
+            logging.info("No more DIP ------------------------------- Iterations = {}".format(iter))
+            logging.info("=============================================================")
             Monosat().newSolver()
 
-    baseutils.h_print(DBG_PR, "================ re-initializing DIPs")
+    logging.debug("================ re-initializing DIPs")
     new_list_dips = Var(true())
     for i in range(0, len(list_str_dip)):
         for j in range(0, len(list_str_dip[i])):
@@ -1104,14 +1105,14 @@ def ham_cks(dip_no):
                 list_dip[i][j] = Var(false())
                 Solve(Not(list_dip[i][j]))
             new_list_dips = And(new_list_dips, list_dip[i][j])
-    baseutils.h_print(DBG_PR, "================ keyFind SAT call")
+    logging.debug("================ keyFind SAT call")
 
     for i in range(0, len(list_dip)):
         for j in range(0, len(list_dip[i])):
-            baseutils.h_print(DBG_PR, "DIP", i, "[", j, "] = ", str(list_dip[i][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("DIP {} [{}] = {}".format(i, j, list_dip[i][j].value()))
+        logging.debug("")
 
-    baseutils.h_print(WAR_PR, "---------------- looking for key (Last SAT Call) ------------")
+    logging.warning("---------------- looking for key (Last SAT Call) ------------")
 
     list_keys = []
     func_keys_value = 0

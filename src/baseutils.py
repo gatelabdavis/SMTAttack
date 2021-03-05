@@ -11,6 +11,9 @@ import operator
 from random import randint
 from collections import deque
 
+import argparse
+import logging
+
 LOGIC_VALUE_ZERO = "0"
 LOGIC_VALUE_ONE = "1"
 
@@ -27,12 +30,12 @@ DBG_PR = 0
 PRINT_MODE = WAR_PR
 
 
-def h_print(f_arg, *argv):
-    if f_arg >= PRINT_MODE:
-        if argv:
-            for arg in argv:
-                print(arg, end="", sep='')
-        print("")
+# def h_print(f_arg, *argv):
+#     if f_arg >= PRINT_MODE:
+#         if argv:
+#             for arg in argv:
+#                 print(arg, end="", sep='')
+#         print("")
 
 
 def unique(a):
@@ -63,17 +66,17 @@ def finddip(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc, k
     output_list2 = converts.circuit2bool(interwires, poutwires, discinp, keyin2)
 
     if list_dip:
-        baseutils.h_print(WAR_PR, "============================================= iteration: ", len(list_dip))
+        logging.warning("============================================= iteration: {}".format(len(list_dip)))
 
         # for i in range(0, len(list_dip)):
 
         for j in range(0, len(list_dip[len(list_dip) - 1])):
-            baseutils.h_print(DBG_PR, list_dip[len(list_dip) - 1][j].symbol, " = ", str(list_dip[len(list_dip) - 1][j].value()))
+            logging.debug("{} = {}".format(list_dip[len(list_dip) - 1][j].symbol, str(list_dip[len(list_dip) - 1][j].value())))
 
-        baseutils.h_print(DBG_PR, "")
+        logging.debug("")
         for j in range(0, len(list_orgcirc[len(list_dip) - 1])):
-            baseutils.h_print(DBG_PR, list_orgcirc[len(list_dip) - 1][j].symbol, " = ", str(list_orgcirc[len(list_dip) - 1][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("{} = {}".format(list_orgcirc[len(list_dip) - 1][j].symbol, str(list_orgcirc[len(list_dip) - 1][j].value())))
+        logging.debug("")
 
         output_list_temp1 = converts.circuit2bool(interwires, poutwires, list_dip[len(list_dip) - 1], keyin1)
         output_list_temp2 = converts.circuit2bool(interwires, poutwires, list_dip[len(list_dip) - 1], keyin2)
@@ -95,15 +98,13 @@ def finddip(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc, k
         # Assert(And(dip_list))
 
     else:
-        baseutils.h_print(WAR_PR, "============================================= iteration: ", 0)
+        logging.warning("============================================= iteration: {}".format(0))
         left_codition = Var(true())
         dip_assert = Var(true())
 
-
-
     for i in range(0, len(poutwires)):
         outxored_right[i] = Xor(output_list1[i], output_list2[i]) #different outputs
-        baseutils.h_print(DBG_PR, output_list1[i].getSymbol(), "A XOR ", output_list2[i].getSymbol(), "B!")
+        logging.debug("{}A XOR {}B !!".format(output_list1[i].getSymbol(), output_list2[i].getSymbol()))
 
     # right_condition = Or(outxored_right)
     # Assert(Or(outxored_right))
@@ -113,18 +114,18 @@ def finddip(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc, k
     # result = Solve()  # Solve the instance in MonoSAT, return either True if the instance is SAT, and False if it is UNSAT
 
     if result:
-        baseutils.h_print(INF_PR, "SAT")
+        logging.info("SAT")
         for i in range(0, len(pinwires)):
-            baseutils.h_print(INF_PR, discinp[i].getSymbol(), " = ", str(discinp[i].value()))
+            logging.info("{} = {}".format(discinp[i].getSymbol(), str(discinp[i].value())))
 
         for i in range(0, len(keywires)):
-            baseutils.h_print(INF_PR, keyin1[i].getSymbol(), " = ", str(keyin1[i].value()))
+            logging.info("{} = {}".format(keyin1[i].getSymbol(), str(keyin1[i].value())))
 
         for i in range(0, len(keywires)):
-            baseutils.h_print(INF_PR, keyin2[i].getSymbol(), " = ", str(keyin2[i].value()))
+            logging.info("{} = {}".format(keyin2[i].getSymbol(),str(keyin2[i].value())))
         return 1, discinp, new_time+exe_time
     else:
-        baseutils.h_print(WAR_PR, "UNSAT")
+        logging.warning("UNSAT")
         return -1, discinp, new_time+exe_time
 
 
@@ -161,17 +162,17 @@ def double_dip(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc
     output_list4 = converts.circuit2bool(interwires, poutwires, discinp, keyin4)
 
     if list_dip:
-        baseutils.h_print(WAR_PR, "============================================= iteration: ", len(list_dip))
+        logging.warning("============================================= iteration: {}".format(len(list_dip)))
 
         # for i in range(0, len(list_dip)):
 
         for j in range(0, len(list_dip[len(list_dip) - 1])):
-            baseutils.h_print(DBG_PR, list_dip[len(list_dip) - 1][j].symbol, " = ", str(list_dip[len(list_dip) - 1][j].value()))
+            logging.debug("{} = {}".format(list_dip[len(list_dip) - 1][j].symbol, str(list_dip[len(list_dip) - 1][j].value())))
 
-        baseutils.h_print(DBG_PR, "")
+        logging.debug("")
         for j in range(0, len(list_orgcirc[len(list_dip) - 1])):
-            baseutils.h_print(DBG_PR, list_orgcirc[len(list_dip) - 1][j].symbol, " = ", str(list_orgcirc[len(list_dip) - 1][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("{} = {}".format(list_orgcirc[len(list_dip) - 1][j].symbol, str(list_orgcirc[len(list_dip) - 1][j].value())))
+        logging.debug("")
 
         output_list_temp1 = converts.circuit2bool(interwires, poutwires, list_dip[len(list_dip) - 1], keyin1)
         output_list_temp2 = converts.circuit2bool(interwires, poutwires, list_dip[len(list_dip) - 1], keyin2)
@@ -197,27 +198,27 @@ def double_dip(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc
         # Assert(And(dip_list))
 
     else:
-        baseutils.h_print(WAR_PR, "============================================= iteration: ", 0)
+        logging.warning("============================================= iteration: {}".format(0))
         left_codition = Var(true())
         dip_assert = Var(true())
 
     for i in range(0, len(poutwires)):
         outxnored_right1[i] = Xnor(output_list1[i], output_list3[i]) #different outputs
-        baseutils.h_print(DBG_PR, output_list1[i].getSymbol(), "A1 XNOR ", output_list3[i].getSymbol(), "B1!")
+        logging.debug("{}A1 XNOR {}B1 !!".format(output_list1[i].getSymbol(), output_list3[i].getSymbol()))
         outxnored_right2[i] = Xnor(output_list2[i], output_list4[i]) #different outputs
-        baseutils.h_print(DBG_PR, output_list2[i].getSymbol(), "A2 XNOR ", output_list4[i].getSymbol(), "B2!")
+        logging.debug("{}A2 XNOR {}B2 !!".format(output_list2[i].getSymbol(), output_list4[i].getSymbol()))
 
         outxored_right1[i] = Xor(output_list1[i], output_list2[i]) #different outputs
-        baseutils.h_print(DBG_PR, output_list1[i].getSymbol(), "A XOR ", output_list2[i].getSymbol(), "B!")
+        logging.debug("{}A XOR {}B !!".format(output_list1[i].getSymbol(), output_list2[i].getSymbol()))
 
         outxored_right2[i] = Xor(output_list1[i], output_list4[i])  # different outputs
-        baseutils.h_print(DBG_PR, output_list1[i].getSymbol(), "A XOR ", output_list2[i].getSymbol(), "B!")
+        logging.debug("{}A XOR {}B !!".format(output_list1[i].getSymbol(), output_list2[i].getSymbol()))
 
         outxored_right3[i] = Xor(output_list2[i], output_list3[i])  # different outputs
-        baseutils.h_print(DBG_PR, output_list1[i].getSymbol(), "A XOR ", output_list2[i].getSymbol(), "B!")
+        logging.debug("{}A XOR {}B !!".format(output_list1[i].getSymbol(), output_list2[i].getSymbol()))
 
         outxored_right4[i] = Xor(output_list3[i], output_list4[i])  # different outputs
-        baseutils.h_print(DBG_PR, output_list1[i].getSymbol(), "A XOR ", output_list2[i].getSymbol(), "B!")
+        logging.debug("{}A XOR {}B !!".format(output_list1[i].getSymbol(), output_list2[i].getSymbol()))
 
     for i in range(0, len(keywires)):
         key_xored[i] = Xor(keyin1[i], keyin2[i], keyin3[i], keyin4[i])
@@ -230,24 +231,24 @@ def double_dip(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc
     # result = Solve()  # Solve the instance in MonoSAT, return either True if the instance is SAT, and False if it is UNSAT
 
     if result:
-        baseutils.h_print(INF_PR, "SAT")
+        logging.info("SAT")
         for i in range(0, len(pinwires)):
-            baseutils.h_print(INF_PR, discinp[i].getSymbol(), " = ", str(discinp[i].value()))
+            logging.info("{} = {}".format(discinp[i].getSymbol(), str(discinp[i].value())))
 
         for i in range(0, len(keywires)):
-            baseutils.h_print(INF_PR, keyin1[i].getSymbol(), " = ", str(keyin1[i].value()))
+            logging.info("{} = {}".format(keyin1[i].getSymbol(), str(keyin1[i].value())))
 
         for i in range(0, len(keywires)):
-            baseutils.h_print(INF_PR, keyin2[i].getSymbol(), " = ", str(keyin2[i].value()))
+            logging.info("{} = {}".format(keyin2[i].getSymbol(), str(keyin2[i].value())))
 
         for i in range(0, len(keywires)):
-            baseutils.h_print(INF_PR, keyin3[i].getSymbol(), " = ", str(keyin3[i].value()))
+            logging.info("{} = {}".format(keyin3[i].getSymbol(), str(keyin3[i].value())))
 
         for i in range(0, len(keywires)):
-            baseutils.h_print(INF_PR, keyin4[i].getSymbol(), " = ", str(keyin4[i].value()))
+            logging.info("{} = {}".format(keyin4[i].getSymbol(), str(keyin4[i].value())))
         return 1, discinp, new_time+exe_time
     else:
-        baseutils.h_print(WAR_PR, "UNSAT")
+        logging.warning("UNSAT")
         return -1, discinp, new_time+exe_time
 
 
@@ -260,7 +261,7 @@ def findkey(keyin_wires, interwires, poutwires, list_dip, list_orgcirc, keyinc):
     for i in range(0, len(keyin_wires)):
         keyin[i] = Var()
         keyin[i].symbol = keyinc[i].symbol
-        baseutils.h_print(DBG_PR, "lastkey", i, " = ", keyin[i].getSymbol())  # getSymbol doesn't work!
+        logging.debug("lastkey {} = {}".format(i, keyin[i].getSymbol())) # getSymbol doesn't work!
 
     for i in range(0, len(list_dip)):
 
@@ -277,10 +278,10 @@ def findkey(keyin_wires, interwires, poutwires, list_dip, list_orgcirc, keyinc):
         keyin[i].symbol = keyinc[i].symbol
 
     if result:
-        baseutils.h_print(INF_PR, "SAT")
+        logging.info("SAT")
         return keyin
     else:
-        baseutils.h_print(WAR_PR, "UNSAT")
+        logging.warning("UNSAT")
 
 
 def findkey_list(keyin_wires, interwires, poutwires, list_dip, list_orgcirc, keyinc, list_keys):
@@ -292,7 +293,7 @@ def findkey_list(keyin_wires, interwires, poutwires, list_dip, list_orgcirc, key
     for i in range(0, len(keyin_wires)):
         keyin[i] = Var()
         keyin[i].symbol = keyinc[i].symbol
-        baseutils.h_print(DBG_PR, "lastkey", i, " = ", keyin[i].getSymbol())  # getSymbol doesn't work!
+        logging.debug("lastkey {} = {}".format(i, keyin[i].getSymbol())) # getSymbol doesn't work!
 
     for i in range(0, len(list_dip)):
 
@@ -320,11 +321,10 @@ def findkey_list(keyin_wires, interwires, poutwires, list_dip, list_orgcirc, key
         keyin[i].symbol = keyinc[i].symbol
 
     if result:
-        baseutils.h_print(INF_PR, "SAT")
+        logging.info("SAT")
         return keyin
     else:
-        baseutils.h_print(WAR_PR, "UNSAT")
-
+        logging.warning("UNSAT")
 
 
 def finddipham(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc, keyin1, keyin2, exe_time, interval, timeout_array, const_solve):
@@ -366,17 +366,17 @@ def finddipham(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc
     output_list2 = converts.circuit2bool(interwires, poutwires, discinp, keyin2)
 
     if list_dip:
-        baseutils.h_print(WAR_PR, "============================================= iteration: ", len(list_dip))
+        logging.warning("============================================= iteration: {}".format(len(list_dip)))
 
         # for i in range(0, len(list_dip)):
 
         for j in range(0, len(list_dip[len(list_dip) - 1])):
-            baseutils.h_print(DBG_PR, list_dip[len(list_dip) - 1][j].symbol, " = ", str(list_dip[len(list_dip) - 1][j].value()))
+            logging.debug("{} = {}".format(list_dip[len(list_dip) - 1][j].symbol, str(list_dip[len(list_dip) - 1][j].value())))
 
-        baseutils.h_print(DBG_PR, "")
+        logging.debug("")
         for j in range(0, len(list_orgcirc[len(list_dip) - 1])):
-            baseutils.h_print(DBG_PR, list_orgcirc[len(list_dip) - 1][j].symbol, " = ", str(list_orgcirc[len(list_dip) - 1][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("{} = {}".format(list_orgcirc[len(list_dip) - 1][j].symbol, str(list_orgcirc[len(list_dip) - 1][j].value())))
+        logging.debug("")
 
         output_list_temp1 = converts.circuit2bool(interwires, poutwires, list_dip[len(list_dip) - 1], keyin1)
         output_list_temp2 = converts.circuit2bool(interwires, poutwires, list_dip[len(list_dip) - 1], keyin2)
@@ -398,7 +398,7 @@ def finddipham(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc
         # Assert(And(dip_list))
 
     else:
-        baseutils.h_print(WAR_PR, "============================================= iteration: ", 0)
+        logging.warning("============================================= iteration: {}".format(0))
         left_codition = Var(true())
         dip_assert = Var(true())
 
@@ -408,7 +408,7 @@ def finddipham(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc
         outxored_right[i] = Xor(output_list1[i], output_list2[i]) #different outputs
         minham_conditions[2*i] = Implies(outxored_right[i], bit_intval[i] == 1)
         minham_conditions[2*i+1] = Implies(Not(outxored_right[i]), bit_intval[i] == 0)
-        baseutils.h_print(DBG_PR, output_list1[i].getSymbol(), "A XOR ", output_list2[i].getSymbol(), "B!")
+        logging.debug("{}A XPR {}B !!".format(output_list1[i].getSymbol(), output_list2[i].getSymbol()))
     for i in range(0, len(poutwires)):
         if i == 0:
             hammming_val = bit_intval[i]
@@ -422,19 +422,17 @@ def finddipham(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc
     # right_condition = Or(outxored_right)
     # Assert(Or(outxored_right))
     current_timeout = int(math.ceil(sum(list(timeout_array)) / len(list(timeout_array))))
-    print("ct", current_timeout)
+    logging.debug("Current Timeout: {}".format(current_timeout))
     new_time = time.time()
     result, intr = Solve(And(Or(outxored_right), upper_condition, lower_condition, And(minham_conditions)),
-                         time_limit_seconds=20,
+                         time_limit_seconds=5,
                          conflict_limit=50000)  # Solve the instance in MonoSAT, return either True if the instance is SAT, and False if it is UNSAT
     new_time = time.time() - new_time
 
     # result = Solve( )  # Solve the instance in MonoSAT, return either True if the instance is SAT, and False if it is UNSAT
-    print("hamming_threshold: ", hamming_threshold_low.value(), hamming_threshold_up.value())
-    print("hammming_val: ", hammming_val.value())
 
-    print("inres > ", result)
-    print("intr > ", intr)
+    logging.debug("Hamming Threshold: {},{}".format(hamming_threshold_low.value(), hamming_threshold_up.value()))
+    logging.debug("Hamming Value: ()".format(hammming_val.value()))
 
     if intr == 1:
         timeout_array.append(20)
@@ -453,88 +451,86 @@ def finddipham(pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc
         else:
             const_solve.append(int(hammming_val.value()))
 
-        baseutils.h_print(INF_PR, "SAT")
-        baseutils.h_print(INF_PR, "DIP >> =====================================")
+        logging.info("SAT")
+        logging.info("DIP >> =====================================")
         for i in range(0, len(pinwires)):
-            baseutils.h_print(INF_PR, discinp[i].getSymbol(), " = ", str(discinp[i].value()))
+            logging.info("{} = {}".format(discinp[i].getSymbol(), str(discinp[i].value())))
 
-        baseutils.h_print(INF_PR, "Key1 >> ====================================")
+        logging.info("Key1 >> ====================================")
         for i in range(0, len(keywires)):
-            baseutils.h_print(INF_PR, keyin1[i].getSymbol(), " = ", str(keyin1[i].value()))
+            logging.info("{} = {}".format(keyin1[i].getSymbol(), str(keyin1[i].value())))
 
-        baseutils.h_print(INF_PR, "Out1 >> ====================================")
+        logging.info("Out1 >> ====================================")
         for i in range(0, len(poutwires)):
-            baseutils.h_print(INF_PR, output_list1[i].getSymbol(), " = ", str(output_list1[i].value()))
+            logging.info("{} = {}".format(output_list1[i].getSymbol(), str(output_list1[i].value())))
 
-        baseutils.h_print(INF_PR, "Key2 >> ====================================")
+        logging.info("Key2 >> ====================================")
         for i in range(0, len(keywires)):
-            baseutils.h_print(INF_PR, keyin2[i].getSymbol(), " = ", str(keyin2[i].value()))
+            logging.info("{} = {}".format(keyin2[i].getSymbol(), str(keyin2[i].value())))
 
-        baseutils.h_print(INF_PR, "Out2 >> ====================================")
+        logging.info("Out2 >> ====================================")
         for i in range(0, len(poutwires)):
-            baseutils.h_print(INF_PR, output_list2[i].getSymbol(), " = ", str(output_list2[i].value()))
+            logging.info("{} = {}".format(output_list2[i].getSymbol(), str(output_list2[i].value())))
 
 
-        print("DIP > ", end='')
-        for i in range(0, len(pinwires)):
-            if str(discinp[i].value()) == "True":
-                print("1", end= '')
-            elif str(discinp[i].value()) == "False":
-                print("0", end='')
-        print("")
-
-        print("====================================")
-
-        print("Key1 > ", end='')
-        for i in range(0, len(keywires)):
-            if str(keyin1[i].value()) == "True":
-                print("1", end='')
-            elif str(keyin1[i].value()) == "False":
-                print("0", end='')
-        print("")
-
-        print("Key2 > ", end='')
-        for i in range(0, len(keywires)):
-            if str(keyin2[i].value()) == "True":
-                print("1", end='')
-            elif str(keyin2[i].value()) == "False":
-                print("0", end='')
-        print("")
-
-        print("====================================")
-
-        print("Out1 > ", end='')
-        for i in range(0, len(poutwires)):
-            if str(output_list1[i].value()) == "True":
-                print("1", end='')
-            elif str(output_list1[i].value()) == "False":
-                print("0", end='')
-        print("")
-
-        print("Out2 > ", end='')
-        for i in range(0, len(poutwires)):
-            if str(output_list2[i].value()) == "True":
-                print("1", end='')
-            elif str(output_list2[i].value()) == "False":
-                print("0", end='')
-        print("")
-
-        print("xored > ", end='')
-        for i in range(0, len(poutwires)):
-            print(bit_intval[i].value(), end='')
-        print("")
-
+        # print("DIP > ", end='')
+        # for i in range(0, len(pinwires)):
+        #     if str(discinp[i].value()) == "True":
+        #         print("1", end= '')
+        #     elif str(discinp[i].value()) == "False":
+        #         print("0", end='')
+        # print("")
+        #
+        # print("====================================")
+        #
+        # print("Key1 > ", end='')
+        # for i in range(0, len(keywires)):
+        #     if str(keyin1[i].value()) == "True":
+        #         print("1", end='')
+        #     elif str(keyin1[i].value()) == "False":
+        #         print("0", end='')
+        # print("")
+        #
+        # print("Key2 > ", end='')
+        # for i in range(0, len(keywires)):
+        #     if str(keyin2[i].value()) == "True":
+        #         print("1", end='')
+        #     elif str(keyin2[i].value()) == "False":
+        #         print("0", end='')
+        # print("")
+        #
+        # print("====================================")
+        #
+        # print("Out1 > ", end='')
+        # for i in range(0, len(poutwires)):
+        #     if str(output_list1[i].value()) == "True":
+        #         print("1", end='')
+        #     elif str(output_list1[i].value()) == "False":
+        #         print("0", end='')
+        # print("")
+        #
+        # print("Out2 > ", end='')
+        # for i in range(0, len(poutwires)):
+        #     if str(output_list2[i].value()) == "True":
+        #         print("1", end='')
+        #     elif str(output_list2[i].value()) == "False":
+        #         print("0", end='')
+        # print("")
+        #
+        # print("xored > ", end='')
+        # for i in range(0, len(poutwires)):
+        #     print(bit_intval[i].value(), end='')
+        # print("")
 
         return 1, discinp, new_time+exe_time, interval, timeout_array, const_solve
     elif intr == 0:
-        baseutils.h_print(WAR_PR, "UNSAT")
+        logging.warning("UNSAT")
         return -1, discinp, new_time+exe_time, interval, timeout_array, const_solve
     elif intr == 1:
         return -2, discinp, new_time+exe_time, interval, timeout_array, const_solve
 
 
-
-def finddiplazy(obf_bench_address, pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc, keyin1, keyin2, exe_time, gc_list1, gc_list2):
+def finddiplazy(args, obf_bench_address, pinwires, keywires, interwires, poutwires, list_dip, list_orgcirc, keyin1, keyin2, exe_time, gc_list1, gc_list2):
 
     discinp = [None] * len(pinwires)
 
@@ -557,17 +553,17 @@ def finddiplazy(obf_bench_address, pinwires, keywires, interwires, poutwires, li
     output_list2 = converts.circuit2bool(interwires, poutwires, discinp, keyin2)
 
     if list_dip:
-        baseutils.h_print(WAR_PR, "============================================= iteration: ", len(list_dip))
+        logging.warning("============================================= iteration: {}".format(len(list_dip)))
 
         # for i in range(0, len(list_dip)):
 
         for j in range(0, len(list_dip[len(list_dip) - 1])):
-            baseutils.h_print(DBG_PR, list_dip[len(list_dip) - 1][j].symbol, " = ", str(list_dip[len(list_dip) - 1][j].value()))
+            logging.debug("{} = {}".format(list_dip[len(list_dip) - 1][j].symbol, str(list_dip[len(list_dip) - 1][j].value())))
 
-        baseutils.h_print(DBG_PR, "")
+        logging.debug("")
         for j in range(0, len(list_orgcirc[len(list_dip) - 1])):
-            baseutils.h_print(DBG_PR, list_orgcirc[len(list_dip) - 1][j].symbol, " = ", str(list_orgcirc[len(list_dip) - 1][j].value()))
-        baseutils.h_print(DBG_PR, "")
+            logging.debug("{} = {}".format(list_orgcirc[len(list_dip) - 1][j].symbol, str(list_orgcirc[len(list_dip) - 1][j].value())))
+        logging.debug("")
 
         output_list_temp1 = converts.circuit2bool(interwires, poutwires, list_dip[len(list_dip) - 1], keyin1)
         output_list_temp2 = converts.circuit2bool(interwires, poutwires, list_dip[len(list_dip) - 1], keyin2)
@@ -589,13 +585,13 @@ def finddiplazy(obf_bench_address, pinwires, keywires, interwires, poutwires, li
         # Assert(And(dip_list))
 
     else:
-        baseutils.h_print(WAR_PR, "============================================= iteration: ", 0)
+        logging.warning("============================================= iteration: {}".format(0))
         left_codition = Var(true())
         dip_assert = Var(true())
 
     for i in range(0, len(poutwires)):
         outxored_right[i] = Xor(output_list1[i], output_list2[i]) #different outputs
-        baseutils.h_print(DBG_PR, output_list1[i].getSymbol(), "A XOR ", output_list2[i].getSymbol(), "B!")
+        logging.debug("{}A XPR {}B !!".format(output_list1[i].getSymbol(), output_list2[i].getSymbol()))
 
     graph_pre_time = 0
     if list_dip:
@@ -604,9 +600,9 @@ def finddiplazy(obf_bench_address, pinwires, keywires, interwires, poutwires, li
         graph_pre_time = 0
     else:
         graph_pre_time = time.time()
-        path_conditions1 = graph_dep_lazy(obf_bench_address, poutwires, keyin1)
+        path_conditions1 = graph_dep_lazy(args, obf_bench_address, poutwires, keyin1)
         graph_pre_time = time.time() - graph_pre_time
-        path_conditions2 = graph_dep_lazy(obf_bench_address, poutwires, keyin2)
+        path_conditions2 = graph_dep_lazy(args, obf_bench_address, poutwires, keyin2)
 
 
     new_time = time.time()
@@ -615,22 +611,22 @@ def finddiplazy(obf_bench_address, pinwires, keywires, interwires, poutwires, li
     # result = Solve()  # Solve the instance in MonoSAT, return either True if the instance is SAT, and False if it is UNSAT
 
     if result:
-        baseutils.h_print(INF_PR, "SAT")
+        logging.info("SAT")
         for i in range(0, len(pinwires)):
-            baseutils.h_print(INF_PR, discinp[i].getSymbol(), " = ", str(discinp[i].value()))
+            logging.debug("{} = {}".format(discinp[i].getSymbol(), str(discinp[i].value())))
 
         for i in range(0, len(keywires)):
-            baseutils.h_print(INF_PR, keyin1[i].getSymbol(), " = ", str(keyin1[i].value()))
+            logging.debug("{} = {}".format(keyin1[i].getSymbol(), str(keyin1[i].value())))
 
         for i in range(0, len(keywires)):
-            baseutils.h_print(INF_PR, keyin2[i].getSymbol(), " = ", str(keyin2[i].value()))
+            logging.debug("{} = {}".format(keyin2[i].getSymbol(), str(keyin2[i].value())))
         return 1, discinp, new_time + exe_time + graph_pre_time/10, path_conditions1, path_conditions2
     else:
-        baseutils.h_print(WAR_PR, "UNSAT")
+        logging.warning("UNSAT")
         return -1, discinp, new_time + exe_time + graph_pre_time/10, path_conditions1, path_conditions2
 
 
-def graph_dep_lazy(benchmark_address, orgpoutwires, keyin):
+def graph_dep_lazy(args, benchmark_address, orgpoutwires, keyin):
 
     g = Graph()
     node_array = []
@@ -726,8 +722,8 @@ def graph_dep_lazy(benchmark_address, orgpoutwires, keyin):
     dest = g.addNode("destination")
     source_edges = []
     dest_edges = []
-    bv1 = BitVector(6)
-    bv2 = BitVector(6)
+    bv1 = BitVector(args.maximum_delay)
+    bv2 = BitVector(args.minimum_delay)
 
     for k in range(0, len(input_list)):
         source_edges.append(g.addEdge(source, n[k]))
@@ -737,8 +733,8 @@ def graph_dep_lazy(benchmark_address, orgpoutwires, keyin):
     AssertAtMostOne(source_edges)
     AssertAtMostOne(dest_edges)
 
-    Assert(g.distance_leq(source, dest, bv1 + 5 + 2))
-    upperbound = ~g.distance_leq(source, dest, bv2 - 5 + 2)
+    Assert(g.distance_leq(source, dest, bv1))
+    upperbound = ~g.distance_leq(source, dest, bv2)
     Assert(upperbound)
 
     list_conditions = []
@@ -756,17 +752,17 @@ def graph_dep_lazy(benchmark_address, orgpoutwires, keyin):
                         bv2 = orgpoutwires[j].logic_level_min
                         bv1 = orgpoutwires[j].logic_level
 
-                baseutils.h_print(DBG_PR, n[k], '->', n[u - i - 1])
+                logging.debug("{} -> {}".format(n[k], n[u - i - 1]))
 
                 result, intr = Solve(And(source_edges[k], dest_edges[i]))
-                baseutils.h_print(DBG_PR, result)
+                logging.debug("{}".format(result))
 
                 if result:
                     # list_conditions.append(And(source_edges[k], dest_edges[i]))
                     path_by_nodes = g.getPath(upperbound)
                     list_conditions.append(And(source_edges[k], dest_edges[i]))
                     if path_by_nodes is not None:
-                        baseutils.h_print(DBG_PR, "Satisfying path (as a list of nodes): " + str(path_by_nodes))
+                        logging.debug("Satisfying path (as a list of nodes): {}".format(str(path_by_nodes)))
                         for i in path_by_nodes:
                             if i != source and i != dest:
                                 for j in range(0, len(key_gate)):
@@ -778,21 +774,21 @@ def graph_dep_lazy(benchmark_address, orgpoutwires, keyin):
                                             for m in range(0, len(solved_keys)):
                                                 if solved_keys[m] == key_list[j]:
                                                     if solved_keys_value[m] != key_value[j]:
-                                                        baseutils.h_print(WAR_PR, "----------------", solved_keys[m])
-                                                        baseutils.h_print(WAR_PR, "---solved:", solved_keys_value[m])
-                                                        baseutils.h_print(WAR_PR, "---current:", key_value[j])
-                                        baseutils.h_print(DBG_PR, key_list[j], '=', key_value[j])
+                                                        logging.warning("---------------- {}".format(solved_keys[m]))
+                                                        logging.warning("---solved: {}".format(solved_keys_value[m]))
+                                                        logging.warning("---current: {}".format(key_value[j]))
+                                        logging.debug("----------------{}".format(key_value[j]))
 
-                baseutils.h_print(DBG_PR, '--------------------')
+                logging.debug("--------------------")
     else:
-        baseutils.h_print(WAR_PR, "No delay keys ..........")
+        logging.debug("No delay keys ..........")
 
     return list_conditions
 
 
-def graph_dep(benchmark_address, orgpoutwires):
-    baseutils.h_print(WAR_PR, "************* Starting graph_(Non-Boolean) Solving **********")
-    baseutils.h_print(WAR_PR, "------------ looking for time-constrained Paths  ------------")
+def graph_dep(args, benchmark_address, orgpoutwires):
+    logging.warning("************* Starting graph_(Non-Boolean) Solving **********")
+    logging.warning("------------ looking for time-constrained Paths  ------------")
 
     g = Graph()
     node_array = []
@@ -871,15 +867,15 @@ def graph_dep(benchmark_address, orgpoutwires):
     solved_keys = []
     solved_keys_value = []
 
-    baseutils.h_print(WAR_PR, "=========== Starting graph_(Non-Boolean) Solving ============")
-    baseutils.h_print(WAR_PR, "----------------- Iterative distance_lt call ----------------")
+    logging.warning("=========== Starting graph_(Non-Boolean) Solving ============")
+    logging.warning("----------------- Iterative distance_lt call ----------------")
 
     source = g.addNode("source")
     dest = g.addNode("destination")
     source_edges = []
     dest_edges = []
-    bv1 = BitVector(6)
-    bv2 = BitVector(6)
+    bv1 = BitVector(int(args.maximum_delay))
+    bv2 = BitVector(int(args.minimum_delay))
 
     for k in range(0, len(input_list)):
         source_edges.append(g.addEdge(source, n[k]))
@@ -889,8 +885,8 @@ def graph_dep(benchmark_address, orgpoutwires):
     AssertAtMostOne(source_edges)
     AssertAtMostOne(dest_edges)
 
-    Assert(g.distance_leq(source, dest, bv1 + 5 + 2))
-    upperbound = ~g.distance_leq(source, dest, bv2 - 5 + 2)
+    Assert(g.distance_leq(source, dest, bv1))
+    upperbound = ~g.distance_leq(source, dest, bv2)
     Assert(upperbound)
 
     if len(list_delay_keys) > 0:
@@ -901,15 +897,15 @@ def graph_dep(benchmark_address, orgpoutwires):
                         bv2 = orgpoutwires[j].logic_level_min
                         bv1 = orgpoutwires[j].logic_level
 
-                baseutils.h_print(DBG_PR, n[k], '->', n[u - i - 1])
+                logging.debug("{} -> {}".format(n[k], n[u - i - 1]))
 
                 result, intr = Solve(And(source_edges[k], dest_edges[i]))
-                baseutils.h_print(DBG_PR, result)
+                logging.debug("{}", result)
 
                 if result:
                     path_by_nodes = g.getPath(upperbound)
                     if path_by_nodes is not None:
-                        baseutils.h_print(DBG_PR, "Satisfying path (as a list of nodes): " + str(path_by_nodes))
+                        logging.debug("Satisfying path (as a list of nodes):  {}".format(str(path_by_nodes)))
                         for i in path_by_nodes:
                             if i != source and i != dest:
                                 for j in range(0, len(key_gate)):
@@ -921,27 +917,22 @@ def graph_dep(benchmark_address, orgpoutwires):
                                             for m in range(0, len(solved_keys)):
                                                 if solved_keys[m] == key_list[j]:
                                                     if solved_keys_value[m] != key_value[j]:
-                                                        baseutils.h_print(WAR_PR, "----------------slv_key", m, " = ",
-                                                                          solved_keys[m])
-                                                        baseutils.h_print(WAR_PR, "----------------slv_key_value", m,
-                                                                          " = ", solved_keys_value[m])
-                                                        baseutils.h_print(WAR_PR, "----------------key_list", j, " = ",
-                                                                          key_list[j])
-                                                        baseutils.h_print(WAR_PR, "----------------key_list_value", j,
-                                                                          " = ", key_value[j])
-                                        baseutils.h_print(DBG_PR, key_list[j], '=', key_value[j])
+                                                        logging.warning("----------------slv_key {} = {}".format(m, solved_keys[m]))
+                                                        logging.warning("----------------slv_key_value {} = {}".format(m, solved_keys_value[m]))
+                                                        logging.warning("----------------key_list {} = {}".format(j, key_list[j]))
+                                                        logging.warning("----------------key_list_value {} = {}".format(j, key_value[j]))
+                                        logging.warning(" {} = {}".format(key_list[j], key_value[j]))
 
-                baseutils.h_print(DBG_PR, '--------------------')
+                logging.debug("--------------------")
     else:
-        baseutils.h_print(WAR_PR, "No delay keys ..........")
+        logging.warning("No delay keys ..........")
 
-    baseutils.h_print(WAR_PR, "============ Ending graph_(Non-Boolean) Solving =============")
+    logging.warning("============ Ending graph_(Non-Boolean) Solving =============")
 
     key_vars = [None] * len(solved_keys)
 
     if len(list_delay_keys) != len(solved_keys):
-        baseutils.h_print(ERR_PR, "----------------- all keys are not solved! required = ", len(list_delay_keys),
-                          ",   solved = ", len(solved_keys))
+        logging.error("----------------- all keys are not solved! required = {}, solved = {}".format(len(list_delay_keys), len(solved_keys)))
 
     terms = []
     for i in range(0, len(solved_keys)):
@@ -956,7 +947,7 @@ def graph_dep(benchmark_address, orgpoutwires):
     result, intr = Solve(And(terms))
     key_vars.sort(key=operator.attrgetter('symbol'))
     for i in range(0, len(key_vars)):
-        baseutils.h_print(DBG_PR, key_vars[i].getSymbol(), " = ", str(key_vars[i].value()))
+        logging.debug("{} = {}".format(key_vars[i].getSymbol(), str(key_vars[i].value())))
 
     return key_vars
 

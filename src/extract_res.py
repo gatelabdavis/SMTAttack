@@ -1,5 +1,8 @@
 import baseutils
 
+import argparse
+import logging
+
 ERR_PR = 3
 WAR_PR = 2
 INF_PR = 1
@@ -7,7 +10,7 @@ DBG_PR = 0
 
 if __name__ == "__main__":
 
-    baseutils.h_print(WAR_PR, "************************ Starting Main **********************")
+    logging.warning("************************ Starting Main **********************")
 
     reports_directory = "../benchmarks/reports/"
 

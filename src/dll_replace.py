@@ -9,6 +9,9 @@ from random import *
 
 import sys
 
+import argparse
+import logging
+
 
 ERR_PR = 3
 WAR_PR = 2
@@ -17,7 +20,7 @@ DBG_PR = 0
 
 if __name__ == "__main__":
 
-    baseutils.h_print(WAR_PR, "************************ Starting dll_replace **********************")
+    logging.warning("************************ Starting dll_replace **********************")
 
     org_bench_address = "../benchmarks/originals/" + sys.argv[1] + ".bench"     # sys.argv[1] > original bench name
     dll_bname = sys.argv[1] + "_dll_" + sys.argv[2] + ".bench"
@@ -96,7 +99,7 @@ if __name__ == "__main__":
         bench_file.write(p_ins + "\n" + key_ins + "\n" + p_outs + "\n" + new_gates)
         bench_file.close()
 
-    baseutils.h_print(ERR_PR, "written to ", dll_obf_bench_folder)
+    logging.error("written to {}".format(dll_obf_bench_folder))
 
 
 
